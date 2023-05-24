@@ -2,7 +2,10 @@
 
 用户PHP-FPM性能观测，只适用于常规项目，swoole框架的项目禁止使用。
 
-
+![image](./img_0.png)
+![image](./img_1.png)
+![image](./img_2.png)
+![image](./img_3.png)
 
 ### 部署文档
 
