@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+    <title>函数监控</title>
+</head>
+<body>
+<div class="layui-fluid">
+    <br>
+    <div class="layui-row">
+        <div class="layui-col-md6">
+            <div style="height:400px;" id="wt">
+
+            </div>
+        </div>
+        <div class="layui-col-md6">
+            <div style="height:400px;" id="mu">
+
+            </div>
+        </div>
+    </div>
+    <br>
+    <div class="layui-row">
+        <div class="layui-col-md12">
+            <div class="layui-btn-container" style="display: flex;justify-content: flex-end">
+                <a href="{:url('/index/graph',['id'=>$Request.get.id,'platform'=>$params['platform']])}">
+                    <button type="button" class="layui-btn layui-btn-normal">查看火焰图</button>
+                </a>
+                <a href="{:url('/index/stack',['id'=>$Request.get.id,'platform'=>$params['platform']])}">
+                    <button type="button" class="layui-btn layui-btn-normal">查看调用图</button>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="layui-row">
+        <table class="layui-hide" id="ID-table-demo-page"></table>
+    </div>
+</div>
+
+<script src="/static/layui/layui.js"></script>
+<script src="/static/js/echarts.min.js"></script>
+<script>
+    let wtChart   = echarts.init(document.getElementById('wt'));
+    let muChart   = echarts.init(document.getElementById('mu'));
+    wtChartOption = {
+        title  : {text: "执行耗时"},
+        dataset: [
+            {
+                dimensions: ['name', 'value', 'index'],
+                source    : JSON.parse('{:json_encode($wtData,256)}')
+            },
+            {
+                transform: {
+                    type  : 'sort',
+                    config: {dimension: 'value', order: 'desc'}
+                }
+            }
+        ],
+        xAxis  : {},
+        yAxis  : {
+            name     : "时间(ms)",
+            axisLabel: {
+                formatter: function (value, index) {
+                    if (value > 1000) {
+                        return (value / 1000) + "K";
+                    }
+                    return value;
+                }
+            }
+        },
+        series : {
+            type        : 'bar',
+            encode      : {x: 'index', y: 'value'},
+            datasetIndex: 1,
+            itemStyle   : {
+                normal: {
+                    label: {
+                        show     : true,
+                        position : 'top',
+                        distance : 20,
+                        offset   : [0, 10],
+                        textStyle: {
+                            color   : 'black',
+                            fontSize: 12
+                        },
+                        formatter: function (value, index) {
+                            return decodeURIComponent(value["value"][1] + "ms");
+                        }
+                    },
+
+                },
+            },
+        },
+        tooltip: {
+            show       : true,
+            trigger    : "axis",
+            axisPointer: {
+                type: 'cross'
+            },
+            formatter  : function (value) {
+                return decodeURIComponent(value[0]["value"][0]);
+            }
+        }
+    };
+    muChartOption = {
+        title  : {text: "内存占用"},
+        dataset: [
+            {
+                dimensions: ['name', 'value', 'index'],
+                source    : JSON.parse('{:json_encode($muData,256)}')
+            },
+            {
+                transform: {
+                    type  : 'sort',
+                    config: {dimension: 'value', order: 'desc'}
+                }
+            }
+        ],
+        xAxis  : {},
+        yAxis  : {
+            name     : "内存(kb)",
+            axisLabel: {
+                formatter: function (value, index) {
+                    if (value > 1000) {
+                        return (value / 1000) + "K";
+                    }
+                    return value;
+                }
+            }
+        },
+        series : {
+            type        : 'bar',
+            encode      : {x: 'index', y: 'value'},
+            datasetIndex: 1,
+            itemStyle   : {
+                normal    : {
+                    label: {
+                        show     : true,
+                        position : 'top',
+                        distance : 20,
+                        offset   : [0, 10],
+                        textStyle: {
+                            color   : 'black',
+                            fontSize: 12
+                        },
+                        formatter: function (value, index) {
+                            return decodeURIComponent(value["value"][1]) + "kb";
+                        }
+                    }
+                },
+                borderType: "dotted"
+            },
+
+        },
+        tooltip: {
+            show       : true,
+            trigger    : "axis",
+            axisPointer: {
+                type: 'cross'
+            },
+            formatter  : function (value) {
+                return decodeURIComponent(value[0]["value"][0]);
+            }
+        }
+    };
+    wtChart.setOption(wtChartOption);
+    muChart.setOption(muChartOption);
+    // 表格
+    layui.use('table', function () {
+        let table = layui.table;
+        let layer = layui.layer;
+        let util  = layui.util;
+        util.fixbar({
+                        bars : [
+                            {
+                                type   : '元信息',
+                                content: '<i class="layui-icon layui-icon-prev"></i>',
+                                style  : 'font-size: 21px;'
+                            }],
+                        click: function (type) {
+                            if (type === "top") {
+                                return;
+                            }
+                            layer.open({
+                                           type      : 1,
+                                           offset    : 'r',
+                                           anim      : 'slideLeft',
+                                           area      : ['50%', '100%'],
+                                           scrollbar : false,
+                                           shade     : 0.1,
+                                           shadeClose: true,
+                                           id        : 'ID-demo-layer-direction-r',
+                                           content   : '<div style="padding: 16px;">{:json_encode($meta,256)}</div>'
+                                       });
+                        }
+                    });
+        table.render({
+                         elem: '#ID-table-demo-page',
+                         data: eval('({:json_encode($dataList,256)})'),
+                         page: false,
+                         cols: [[
+                             {
+                                 field: 'func', width: 400, title: '函数名称', sort: true, templet: function (e) {
+                                     return decodeURIComponent(e.func);
+                                 }
+                             },
+                             {field: 'ct', title: '调用次数', sort: true},
+                             {
+                                 field: 'ewt', title: '执行时间(ms)', sort: true, templet: function (e) {
+                                     return (e.ewt / 1000).toFixed(2) + "ms";
+                                 }
+                             },
+                             {
+                                 field: 'ecpu', title: 'CPU时间(ms)', sort: true, templet: function (e) {
+                                     return (e.ecpu / 1000).toFixed(2) + "ms";
+                                 }
+                             },
+                             {
+                                 field: 'emu', title: '内存占用(kb)', sort: true, templet: function (e) {
+                                     return (e.emu / 1024).toFixed(2) + "kb";
+                                 }
+                             },
+                             {
+                                 field: 'epmu', title: '内存峰值(kb)', sort: true, templet: function (e) {
+                                     return (e.epmu / 1024).toFixed(2) + "kb";
+                                 }
+                             },
+                             {
+                                 field: 'wt', title: '总执行时间(ms)', sort: true, templet: function (e) {
+                                     return (e.wt / 1000).toFixed(2) + "ms";
+                                 }
+                             },
+                             {
+                                 field: 'cpu', title: '总CPU时间(ms)', sort: true, templet: function (e) {
+                                     return (e.wt / 1000).toFixed(2) + "ms";
+                                 }
+                             },
+                             {
+                                 field: 'mu', title: '总内存占用(kb)', sort: true, templet: function (e) {
+                                     return (e.mu / 1024).toFixed(2) + "kb";
+                                 }
+                             },
+                             {
+                                 field: 'pmu', title: '总内存峰值(kb)', sort: true, templet: function (e) {
+                                     return (e.mu / 1024).toFixed(2) + "kb";
+                                 }
+                             },
+                         ]]
+                     });
+
+
+    });
+</script>
+</body>
+</html>

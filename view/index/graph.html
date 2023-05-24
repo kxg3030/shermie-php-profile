@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>火焰图</title>
+    <link rel="stylesheet" href="/static/css/d3-flame-graph.css">
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+</head>
+<body>
+
+<div class="layui-fluid">
+    <br>
+    <div class="layui-row">
+        <div class="layui-col-md10">
+            <blockquote class="layui-text layui-elem-quote layui-font-blue layui-font-14">
+                火焰图将长时间运行的方法以及有深层调用堆栈的方法可视化，可以更直观地分析每一个函数的调用栈，哪些函数比较耗时，以此来分析性能的瓶颈
+            </blockquote>
+        </div>
+        <div class="layui-col-md2">
+            <div class="layui-btn-container" style="float: right">
+                <button type="button" class="layui-btn layui-btn-normal" id="reset">重置火焰图</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="layui-row">
+        <div id="chart"></div>
+    </div>
+</div>
+
+</body>
+<script src="/static/layui/layui.js"></script>
+<script src="/static/js/d3.js"></script>
+<script src="/static/js/d3-tip-index.js"></script>
+<script src="/static/js/d3-flame-graph.js"></script>
+<script>
+    layui.use(function () {
+        let jquery     = layui.jquery;
+        let width      = parseInt(jquery('#chart').css('width'), 10);
+        let cellHeight = 30;
+        let flameGraph = d3.flameGraph().height(700).width(width)
+            .cellHeight(cellHeight)
+            .transitionDuration(750)
+            .transitionEase('cubic-in-out')
+            .sort(true);
+        let tip        = d3.tip().direction("s").offset([8, 0]).attr('class', 'd3-flame-graph-tip').html(function (d) {
+            let units = 'ms';
+            return d.name + " &mdash; " + (d.value / 1e6).toFixed(2) + units + ' (' + Math.round(100 * d.dx, 3) + '%)';
+        });
+        flameGraph.tooltip(tip);
+        let data = eval('({:json_encode($data,256)})');
+        flameGraph.height(getDepth(data.data) * cellHeight);
+        flameGraph.sort(function (a, b) {
+            return data.sort[a.name] - data.sort[b.name];
+        });
+        d3.select("#chart").datum(data.data).call(flameGraph);
+        jquery("#reset").click(function () {
+            flameGraph.resetZoom();
+        });
+
+        function getDepth(obj) {
+            let depth = 0;
+            if (obj.children) {
+                obj.children.forEach(function (d) {
+                    let tmpDepth = getDepth(d)
+                    if (tmpDepth > depth) {
+                        depth = tmpDepth
+                    }
+                })
+            }
+            return 1 + depth
+        }
+
+        function formatNumber(num, decimalPlaces) {
+            if (decimalPlaces === undefined) {
+                decimalPlaces = 2;
+            }
+            let sep    = ',';
+            let number = +num;
+            let val    = number.toFixed(decimalPlaces);
+            if (val < 1000) {
+                return val;
+            }
+            let split     = val.split(/\./);
+            let thousands = split[0];
+            let i         = thousands.length % 3 || 3;
+
+            thousands = thousands.slice(0, i) + thousands.slice(i).replace(/(\d{3})/g, sep + '$1');
+            split[0]  = thousands;
+            return split.join('.');
+        }
+
+    });
+</script>
+</html>

@@ -1,0 +1,162 @@
+{extend name="layout"}
+
+{block name="content"}
+<form class="layui-form layui-row layui-col-space16" lay-filter="demo-val-filter">
+    <input type="hidden" name="platform">
+    <input type="hidden" name="sort" value="{$sort}">
+    <div class="layui-col-md2">
+        <select name="method" lay-filter="aihao">
+            <option value="">请求方式</option>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="HEAD">HEAD</option>
+            <option value="OPTIONS">OPTIONS</option>
+            <option value="DELETE">DELETE</option>
+        </select>
+    </div>
+    <div class="layui-col-md2">
+        <div class="layui-input-wrap">
+            <input type="text" name="url" placeholder="请求地址" lay-affix="clear"
+                   class="layui-input">
+        </div>
+    </div>
+    <div class="layui-col-md2">
+        <div class="layui-input-wrap">
+            <div class="layui-input-prefix">
+                <i class="layui-icon layui-icon-date"></i>
+            </div>
+            <input type="text" class="layui-input"
+                   id="ID-laydate-shortcut-range-datetime" placeholder="请求时间"
+                   name="time">
+        </div>
+    </div>
+
+    <div class="layui-col-md2">
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <select name="platform">
+                    {foreach $platform as $item}
+                    <option value="{$item.id}">{$item.title}</option>
+                    {/foreach}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="layui-col-md2">
+        <button class="layui-btn" lay-submit lay-filter="demo-table-search">搜索</button>
+        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+    </div>
+</form>
+<table class="layui-hide" id="ID-table-demo-search"></table>
+{/block}
+
+{block name="js"}
+<script>
+    layui.use(function () {
+        const table   = layui.table;
+        const laydate = layui.laydate;
+        const form    = layui.form;
+        const jquery  = layui.jquery;
+        // 表格渲染
+        table.render({
+                         elem: '#ID-table-demo-search',
+                         url : '/api/profile/list?' + queryParams(),
+                         cols: [
+                             [
+                                 {
+                                     field: 'method', title: '请求方法', width: 150, templet: function (e) {
+                                         return `<a href="/index/view?id=${e.id}&platform=${platform()}" class="layui-font-blue">${e.method}</a>`.toString();
+                                     }
+                                 },
+                                 {
+                                     field: 'address', title: '请求地址', templet: function (e) {
+                                         return `<a href="/index/address?url=${encodeURIComponent(e.address)}&platform=${platform()}" class="layui-font-blue">${e.address}</a>`;
+                                     }
+                                 },
+                                 {field: 'time', title: '请求时间', width: 180},
+                                 {
+                                     field: 'wt', title: '执行时间', width: 130, templet: function (e) {
+                                         return (e.wt / 1000).toFixed(2) + "ms";
+                                     }
+                                 },
+                                 {
+                                     field: 'cpu', title: 'CPU时间', width: 200, templet: function (e) {
+                                         return (e.cpu / 1000).toFixed(2) + "ms";
+                                     }
+                                 },
+                                 {
+                                     field: 'mu', title: '内存占用', width: 120, templet: function (e) {
+                                         return (e.mu / 1024 / 1024).toFixed(2) + "mb";
+                                     }
+                                 },
+                                 {
+                                     field: 'pmu', title: '内存峰值', width: 120, templet: function (e) {
+                                         return (e.pmu / 1024 / 1024).toFixed(2) + "mb";
+                                     }
+                                 },
+                                 {
+                                     field: 'ip', title: 'IP', width: 180, templet: function (e) {
+                                         return e.ip + ":" + e.port;
+                                     }
+                                 }
+                             ]
+                         ],
+
+                         response : {
+                             statusCode: 200
+                         },
+                         parseData: function (res) {
+                             return {
+                                 "code" : res.data.code,
+                                 "msg"  : res.msg,
+                                 "count": res.data.count,
+                                 "data" : res.data.data,
+                             };
+                         },
+                         page     : true,
+                         limit    : 18
+                     });
+        // 日期渲染
+        laydate.render({
+                           elem       : "#ID-laydate-shortcut-range-datetime",
+                           theme      : ['molv', 'circle'],
+                           type       : "datetime",
+                           format     : 'yyyy-MM-dd HH:mm:ss',
+                           range      : true,
+                           rangeLinked: true,
+                           shortcuts  : []
+                       }
+        );
+        // 搜索提交
+        form.on('submit(demo-table-search)', function (data) {
+            reload();
+            return false;
+        });
+
+        // 重载表格
+        function reload(where = {}) {
+            let condition = form.val("demo-val-filter");
+            condition     = Object.assign(condition, where);
+            table.reload('ID-table-demo-search', {
+                where: condition
+            });
+        }
+
+        // 表单参数
+        function queryParams() {
+            let field  = form.val("demo-val-filter");
+            let params = "";
+            for (const item in field) {
+                params += `${item}=${field[item]}&`
+            }
+            return params.substr(0, params.lastIndexOf("&"));
+        }
+
+        function platform() {
+            return jquery("select[name='platform']").val();
+        }
+    });
+</script>
+{/block}

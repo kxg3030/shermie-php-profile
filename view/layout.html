@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FPM性能检测</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+    {block name="css"}
+    {/block}
+</head>
+<body>
+<div>
+    <ul class="layui-nav">
+        {foreach $menu as $key => $item}
+        <li class="layui-nav-item {if $item.active}layui-this{/if}">
+            <a href="{$item.link}" data-id="{$item.metric}">{$item.name} <i class="layui-icon layui-icon-down"></i></a>
+        </li>
+        {/foreach}
+        <li class="layui-nav-item" lay-unselect style="float: right">
+            <a href="javascript:;">
+                <img src="/static/image/logo.jpg" class="layui-nav-img">
+            </a>
+        </li>
+    </ul>
+
+
+</div>
+<br>
+<div style="padding: 10px;box-sizing: border-box;width: 100%">
+    {block name="content"}
+
+    {/block}
+</div>
+{include file="../view/footer.html"}
+<script src="/static/layui/layui.js"></script>
+{block name="js"}
+
+{/block}
+</body>
+</html>

@@ -1,0 +1,37 @@
+/*prototype graph styles*/
+.callgraph {
+    overflow: hidden;
+    cursor: move;
+}
+
+.callgraph tspan,
+.callgraph text {
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+}
+
+.callgraph .node {
+    cursor: pointer;
+}
+
+.callgraph .node rect {
+    stroke: #333;
+    stroke-width: 1.5px;
+    fill: #fff;
+}
+
+.callgraph .active rect {
+    stroke: #59bdd2;
+    stroke-width: 4px;
+}
+
+.callgraph .edgeLabel rect {
+    fill: #fff;
+}
+
+.callgraph .edgePath {
+    stroke: #333;
+    stroke-width: 1.5px;
+    fill: none;
+}

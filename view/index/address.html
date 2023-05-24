@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+    <title>函数监控</title>
+</head>
+<body>
+<div class="layui-fluid">
+    <br>
+    <div class="layui-row">
+        <div class="layui-col-md10">
+            <blockquote class="layui-text layui-elem-quote layui-font-blue layui-font-14">
+                只展示最近请求的200条数据
+            </blockquote>
+        </div>
+    </div>
+    <br>
+    <div class="layui-row">
+        <div class="layui-col-md6">
+            <div style="height:400px;" id="wt">
+
+            </div>
+        </div>
+        <div class="layui-col-md6">
+            <div style="height:400px;" id="mu">
+
+            </div>
+        </div>
+    </div>
+    <br>
+    <div class="layui-row">
+        <table class="layui-hide" id="ID-table-demo-page"></table>
+    </div>
+</div>
+
+<script src="/static/layui/layui.js"></script>
+<script src="/static/js/echarts.min.js"></script>
+<script>
+    let wtChart  = document.getElementById('wt');
+    let muChart  = document.getElementById('mu');
+    wtChart      = echarts.init(wtChart);
+    muChart      = echarts.init(muChart);
+    let ctData   = JSON.parse('{:json_encode($ctData,256)}');
+    let muData   = JSON.parse('{:json_encode($muData,256)}');
+    let ctDate   = JSON.parse('{:json_encode($ctTime,256)}');
+    let wtOption = {
+        tooltip : {
+            trigger : 'axis',
+            position: function (pt) {
+                return [pt[0], '10%'];
+            }
+        },
+        title   : {
+            left: 'center',
+            text: '执行时间趋势'
+        },
+        xAxis   : {
+            type       : 'category',
+            boundaryGap: false,
+            data       : ctDate
+        },
+        yAxis   : {
+            type       : 'value',
+            boundaryGap: [0, '100%'],
+            name       : "时间(ms)",
+            axisLabel  : {
+                formatter: function (value, index) {
+                    if (value > 1000) {
+                        return (value / 1000) + "K";
+                    }
+                    return value;
+                }
+            }
+        },
+        dataZoom: [
+            {
+                type : 'inside',
+                start: 0,
+                end  : 50
+            },
+            {
+                start: 0,
+                end  : 10
+            }
+        ],
+        series  : [
+            {
+                name     : '时间',
+                type     : 'line',
+                symbol   : 'none',
+                sampling : 'lttb',
+                itemStyle: {
+                    color : 'rgb(255, 70, 131)',
+                    normal: {
+                        label: {
+                            show     : true,
+                            position : 'top',
+                            distance : 20,
+                            offset   : [0, 10],
+                            textStyle: {
+                                color   : 'black',
+                                fontSize: 12
+                            },
+                            formatter: function (value, index) {
+
+                                return value["value"] + "ms";
+                            }
+                        }
+                    },
+                },
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+
+                        {
+                            offset: 0,
+                            color : '#ff5722'
+                        },
+                        {
+                            offset: 1,
+                            color : 'rgb(255, 158, 68)'
+                        },
+                    ])
+                },
+                data     : ctData
+            }
+        ]
+    };
+    let muOption = {
+        tooltip : {
+            trigger : 'axis',
+            position: function (pt) {
+                return [pt[0], '10%'];
+            }
+        },
+        title   : {
+            left: 'center',
+            text: '内存占用趋势'
+        },
+        xAxis   : {
+            type       : 'category',
+            boundaryGap: false,
+            data       : ctDate
+        },
+        yAxis   : {
+            type       : 'value',
+            boundaryGap: [0, '100%'],
+            name       : "内存(kb)",
+            axisLabel  : {
+                formatter: function (value, index) {
+                    if (value > 1000) {
+                        return (value / 1000) + "K";
+                    }
+                    return value;
+                }
+            }
+        },
+        dataZoom: [
+            {
+                type : 'inside',
+                start: 0,
+                end  : 50
+            },
+            {
+                start: 0,
+                end  : 10
+            }
+        ],
+        series  : [
+            {
+                name     : '内存(kb)',
+                type     : 'line',
+                symbol   : 'none',
+                sampling : 'lttb',
+                itemStyle: {
+                    color : 'rgb(255, 70, 131)',
+                    normal: {
+                        label: {
+                            show     : true,
+                            position : 'bottom',
+                            distance : 20,
+                            offset   : [0, 20],
+                            textStyle: {
+                                color   : 'black',
+                                fontSize: 12
+                            },
+                            formatter: function (value, index) {
+                                return value["value"] + "kb";
+                            }
+                        }
+                    },
+                },
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        {
+                            offset: 0,
+                            color : '#ff5722'
+                        },
+                        {
+                            offset: 1,
+                            color : 'rgb(255, 158, 68)'
+                        },
+                    ])
+                },
+                data     : muData
+            }
+        ]
+    };
+    wtChart.setOption(wtOption);
+    muChart.setOption(muOption);
+    layui.use('table', function () {
+        let table = layui.table;
+        table.render({
+                         elem: '#ID-table-demo-page',
+                         data: JSON.parse('{:json_encode($tableData,256)}'),
+                         page: false,
+                         cols: [[
+                             {field: 'method', title: '请求方式', sort: true},
+                             {field: 'url', title: '请求地址', sort: true},
+                             {
+                                 field: 'wt', title: '执行时间(ms)', sort: true, templet: function (e) {
+                                     return (e.wt / 1e3).toFixed(2) + "ms";
+                                 }
+                             },
+                             {
+                                 field: 'cpu', title: 'CPU时间(ms)', sort: true, templet: function (e) {
+                                     return (e.cpu / 1e3).toFixed(2) + "ms";
+                                 }
+                             },
+                             {
+                                 field: 'mu', title: '内存占用(kb)', sort: true, templet: function (e) {
+                                     return (e.mu / 1024).toFixed(2) + "kb";
+                                 }
+                             },
+                         ]]
+                     });
+    });
+</script>
+</body>
+</html>

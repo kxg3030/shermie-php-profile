@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>调用过程</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.css">
+    <link rel="stylesheet" href="/static/css/xhgui.css">
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+</head>
+<body>
+<div class="layui-fluid">
+    <br>
+    <div class="layui-row">
+        <div class="layui-col-md10">
+            <blockquote class="layui-text layui-elem-quote layui-font-blue layui-font-14">
+                请求地址：{$meta.url}，执行占比1%或更少的方法会从调用图中忽略
+            </blockquote>
+        </div>
+    </div>
+
+    <div class="layui-row">
+        <div id="callgraph-image">
+        </div>
+    </div>
+
+</div>
+</body>
+<script src="/static/layui/layui.js"></script>
+<script src="/static/js/d3.js"></script>
+<script src="/static/js/xhgui-charts.js"></script>
+<script src="/static/js/dagre-d3.js"></script>
+<script src="/static/js/callgraph.js"></script>
+<script>
+    layui.use(function () {
+        function load(metric = "wt", threshold = 0.01) {
+            Xhgui.callgraph('#callgraph-image', eval('({:json_encode($data,256)})'), {
+                baseUrl   : "",
+                shortUrl  : "",
+                detailView: '#callgraph-details',
+                threshold : threshold,
+                metric    : metric
+            });
+        }
+
+        load();
+    });
+</script>
+</html>
